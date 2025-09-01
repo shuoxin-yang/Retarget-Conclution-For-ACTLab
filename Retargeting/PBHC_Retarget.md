@@ -102,7 +102,7 @@ pose_aa = motion_data["pose_aa"][:,:72]
 orientation_cost=orientation_base_cost * retarget_info["weight"] if "Wrist" not in joint_name else 1 * retarget_info["weight"],
 #原因：原始方法对于方向的权重极低，为万分之一，若需使手腕遵循原始数据运动，则需调整至合适大小
 
-#修改2，行547
+#修改2，行574
 #在该行后新建一行，补充如下代码
 if "Wrist" in joint_name:
 	correction_quat = sRot.from_euler('z', 90 if joint_name=="L_Wrist" else -90, degrees=True).as_quat()

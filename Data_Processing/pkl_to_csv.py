@@ -13,10 +13,10 @@ opt = parser.parse_args()
 def collect_pkl_names(file_name: str) -> list[str]:
     """返回子一级目录（或自身）中所有 .pkl 的纯文件名（不含后缀）。"""
     if file_name.lower().endswith('.pkl') and os.path.isfile(file_name):
-        return [os.path.splitext(os.path.basename(file_name))[0]]
+        return False, [os.path.splitext(os.path.basename(file_name))[0]]
 
     pattern = os.path.join(file_name, '*.pkl')
-    return [os.path.splitext(os.path.basename(p))[0] for p in glob(pattern)]
+    return True, [os.path.splitext(os.path.basename(p))[0] for p in glob(pattern)]
 
 if __name__ == "__main__":
     pkl_path = opt.pkl_path
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     """若 csv_path 为 "default"，则根据 pkl_path 自动生成。"""
     if csv_path == "default":
-        file_name = collect_pkl_names(pkl_path)
+        mult_file, file_name = collect_pkl_names(pkl_path)
         os.makedirs("./output", exist_ok=True)
         csv_path = []
         if file_name.__len__() == 1:
@@ -38,13 +38,17 @@ if __name__ == "__main__":
         
     """遍历"""
     for i in range(file_name.__len__()):
-        data = jb.load(pkl_path+"/" + file_name[i] + ".pkl")
+        if mult_file:
+            data = jb.load(pkl_path+"/" + file_name[i] + ".pkl")
+        else:
+            data = jb.load(pkl_path)
 
         """关键字格式判断"""
         if data.keys().__len__() == 1:
             print("Type = PBHC format", end="\t")
             type = "PBHC"
             motion = data[list(data.keys())[0]]
+            fps = motion['fps']
             root_pos = motion['root_trans_offset']
             root_rot = motion['root_rot']
             dof_pos  = motion['dof']
@@ -52,6 +56,7 @@ if __name__ == "__main__":
             print("Type = GMR format", end="\t")
             type = "GMR"
             motion = data
+            fps = motion['fps']
             root_pos = motion["root_pos"]
             root_rot = motion["root_rot"]
             dof_pos  = motion["dof_pos"]
@@ -61,7 +66,7 @@ if __name__ == "__main__":
         
         """写入"""
         table = np.hstack([root_pos, root_rot,dof_pos])
-        csv_path[i] += "_" + type + ".csv"
+        csv_path[i] += "_" + type +"_" + str(fps) +".csv"
 
         """强制重新生成判断"""
         if os.path.exists(csv_path[i]) and opt.force_remake:

@@ -93,7 +93,37 @@ Frame Time: <second_pre_frame>
 
 以上为一个标准的.bvh文件在文本阅读器里面的展示，joint可以嵌套，frame_data以单一空格区分，换行为一帧完结，**行尾不包含任何除换行符(\n)以外的任何字符，包括空格。**
 
-标准LaFan数据格式
+标准LaFan数据格式解析：
+
+将任意一条.bvh拆解，可以分为以下两个主要字段：**HIERARCHY 段——骨架定义**与**MOTION 段——逐帧数据**，下面依次分析。
+
+对于**HIERARCHY 段**，包含如下主要节点：
+
+~~~bash
+Hips
+├─ Spine
+│  ├─ Spine1
+│  │  ├─ Spine2
+│  │  │  ├─ Neck
+│  │  │  │  └─ Head
+│  │  │  └─ LeftShoulder → LeftArm → LeftForeArm → LeftHand
+│  │  └─ RightShoulder → RightArm → RightForeArm → RightHand
+├─ LeftUpLeg → LeftLeg → LeftFoot → LeftToeBase
+└─ RightUpLeg → RightLeg → RightFoot → RightToeBase
+~~~
+
+尤其是**Spine2**，是机器人坐标系原点的定位*，缺少需要额外映射。每个节点在 BVH 里用 2~3 行 CHANNELS 说明它携带的自由度：
+
+~~~bash
+ROOT Hips
+{
+    OFFSET  0 0 0
+    CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation
+    ...
+}
+~~~
+
+字段**OFFSET**表示该关节在父关节坐标系中的**静止偏移**（单位 cm）；字段**CHANNELS**表示该关节携带的通道数与顺序，如：根节点 6DoF（3 平移 + 3 旋转），其余 3DoF（仅旋转）；字段**End Site**表示叶子骨，只有 OFFSET，没有 CHANNELS。
 
 以下给出一个标准LaFan的数据样例，MOTION部分有所删减，仅供参考
 
